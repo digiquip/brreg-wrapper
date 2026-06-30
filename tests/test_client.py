@@ -24,6 +24,7 @@ from brreg_wrapper.models import (
     Kommuner1,  # Added import
     Page,
     SlettetEnhet,
+    Underenhet,
 )
 
 
@@ -683,3 +684,54 @@ async def test_response_json_property():
     # Test with no response text
     error = BrregAPIError(message="Test error", status_code=400)
     assert error.response_json is None
+
+
+@pytest.mark.asyncio
+async def test_get_underenhet_with_historiske_navn(httpx_mock: HTTPXMock):
+    """Underenhet responses may include historiskeNavn from the live API."""
+    org_nr = "971917407"
+    mock_response_data = {
+        "organisasjonsnummer": org_nr,
+        "navn": "BETONMAST INNLANDET AS",
+        "organisasjonsform": {
+            "kode": "BEDR",
+            "beskrivelse": "Underenhet til næringsdrivende og offentlig forvaltning",
+            "_links": {
+                "self": {
+                    "href": f"{BrregClient.BASE_URL}/organisasjonsformer/BEDR"
+                }
+            },
+        },
+        "historiskeNavn": [
+            {
+                "navn": "TOTEN BYGG OG ANLEGG AS",
+                "fraDato": "1996-05-22 19:00:08",
+                "tilDato": "2003-01-27 20:36:38",
+            }
+        ],
+        "registrertIMvaregisteret": False,
+        "registreringsdatoEnhetsregisteret": "1995-02-22",
+        "harRegistrertAntallAnsatte": True,
+        "_links": {
+            "self": {"href": f"{BrregClient.BASE_URL}/underenheter/{org_nr}"}
+        },
+    }
+    expected_url = f"{BrregClient.BASE_URL}/underenheter/{org_nr}"
+
+    httpx_mock.add_response(
+        url=expected_url,
+        method="GET",
+        json=mock_response_data,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+
+    client = BrregClient()
+    try:
+        underenhet = await client.get_underenhet(org_nr)
+        assert isinstance(underenhet, Underenhet)
+        assert underenhet.navn == "BETONMAST INNLANDET AS"
+        assert underenhet.historiskeNavn is not None
+        assert underenhet.historiskeNavn[0].navn == "TOTEN BYGG OG ANLEGG AS"
+    finally:
+        await client.close()

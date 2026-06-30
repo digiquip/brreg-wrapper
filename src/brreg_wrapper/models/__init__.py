@@ -162,6 +162,23 @@ class LegacyPaategning(BaseModel):
     )
 
 
+class HistoriskNavn(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    navn: str = Field(..., description="Historisk navn")
+    fraDato: str = Field(
+        ...,
+        description="Dato navnet ble gyldig fra",
+        examples=["1995-02-22 22:56:00"],
+    )
+    tilDato: str = Field(
+        ...,
+        description="Dato navnet var gyldig til",
+        examples=["1996-05-22 19:00:08"],
+    )
+
+
 class Self1(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -571,6 +588,9 @@ class Enhet(BaseModel):
     )
     mobil: Optional[str] = Field(
         None, description="Enhetens mobilnummer", examples=["91504800"]
+    )
+    historiskeNavn: Optional[Sequence[HistoriskNavn]] = Field(
+        None, description="Enhetens historiske navn"
     )
     field_links: Optional[FieldLinks2] = Field(None, alias="_links")
 
@@ -1242,6 +1262,9 @@ class Underenhet(BaseModel):
     )
     mobil: Optional[str] = Field(
         None, description="Underenhetens mobilnummer", examples=["91504800"]
+    )
+    historiskeNavn: Optional[Sequence[HistoriskNavn]] = Field(
+        None, description="Underenhetens historiske navn"
     )
     field_links: Optional[FieldLinks13] = Field(None, alias="_links")
 
